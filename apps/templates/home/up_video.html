@@ -57,7 +57,7 @@
                                             <a id="reloadLink" href="#" style="margin-right: 20px;">
                                                 <i class="feather icon-refresh-cw"></i>
                                             </a>
-                                            <a id="downloadLink" href="#" download="analyze_video">
+                                            <a id="downloadLink" href="" download="data_analized">
                                                 <i class="feather icon-download"></i>
                                             </a>
                                         </div>
@@ -174,7 +174,10 @@
                 var response = JSON.parse(xhr.responseText);
                 var videoUrl = response.processed_video_url;
                 var anglesData = response.angles_data;
+                var temp_id_dataset = response.temp_id
                 var fps = response.fps;
+
+                document.getElementById('downloadLink').href = '/temp_file/' + temp_id_dataset
 
                 // Set the video source and load it
                 var videoPlayer = document.getElementById('processedVideo');

@@ -96,28 +96,19 @@ def analyze_video():
             temp_files[temp_file_id] = temp_file.name
 
             draw_analysis = Drawing()
-            drawed_image_temp_name, angles_data, fps_input = draw_analysis.process_video_file(
+            drawed_image_temp_name, angles_data, fps_input, temp_data_name = draw_analysis.process_video_file(
                 temp_file.name)
 
             temp_file_id_drawed = str(uuid.uuid4())
+            temp_file_id_data = str(uuid.uuid4())
             temp_files[temp_file_id_drawed] = drawed_image_temp_name
-            """
-            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
-                file.save(temp_file.name)
-                # Your analysis code here
-                draw_analysis = Drawing()
-                
-                # Generate a unique identifier for the temporary file
-                temp_file_id = str(uuid.uuid4())
-                temp_files[temp_file_id] = temp_file.name
+            temp_files[temp_file_id_data] = temp_data_name
 
-                drawed_image, angles_data = draw_analysis.run_on_video(temp_file.name)
-                #drawed_image.save(temp_file.name)
-            """
             return jsonify({
                 "processed_video_url": url_for('home_blueprint.temp_file', file_id=temp_file_id_drawed),
                 "angles_data": angles_data,
-                "fps": fps_input
+                "fps": fps_input,
+                "temp_id": temp_file_id_data
             })
 
 

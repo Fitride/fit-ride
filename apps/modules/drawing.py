@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 from PIL import Image
 import tempfile
+import pandas as pd
 import subprocess
 try:
     from angles import Angles
@@ -294,6 +295,9 @@ class Drawing:
                 out.write(frame)
             except Exception as e:
                 print("[ERROR] Unable to process the video: ", e)
+        
+        temp_file_data = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        pd.DataFrame(angles_values).to_csv(temp_file_data.name, index=False)
 
         # Fermeture des flux video
         vid.release()
@@ -302,6 +306,6 @@ class Drawing:
         # Convertion de la suite de frame (out) en format exploitable par les navigateurs web
         subprocess.call(args=f"ffmpeg -y -i {temp_file.name} -c:v libx264 {temp_file_out.name}".split(" "))            
             
-        return temp_file_out.name, angles_values, fps_input
+        return temp_file_out.name, angles_values, fps_input, temp_file_data.name
     
     
