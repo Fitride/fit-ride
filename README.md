@@ -127,6 +127,12 @@ By default, the app redirects guest users to authenticate. In order to access th
 
 <br />
 
+## 👉 Deploy on Server
+
+Ex: https://docs.aws.amazon.com/fr_fr/elasticbeanstalk/latest/dg/create-deploy-python-flask.html
+
+<br />
+
 ## ✅ Codebase
 
 The project is coded using blueprints, app factory pattern, dual configuration profile (development and production) and an intuitive structure presented bellow:
