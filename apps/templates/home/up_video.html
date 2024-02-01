@@ -1,0 +1,246 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Page Blank {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- [ Main Content ] start -->
+<div class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+        <div class="pcoded-content">
+            <div class="pcoded-inner-content">
+                <!-- [ breadcrumb ] start -->
+                <div class="page-header">
+                    <div class="page-block">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <div class="page-header-title">
+                                    <h5 class="m-b-10">Update Analytics</h5>
+                                </div>
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+                                    <li class="breadcrumb-item"><a href="javascript:">Update Video</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ breadcrumb ] end -->
+                <div class="main-body">
+                    <div class="page-wrapper">
+                        <!-- [ Main Content ] start -->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="card" id="Upload_Video">
+                                    <div class="card-header">
+                                        <h5>Upload and Analyze a Video</h5>
+                                        <button type="button" id="analyzeButton" class="btn btn-primary">
+                                            <p id="analyse_btn_txt" style="margin-bottom: 0;">Analyze</p>
+                                            <div class="progress" id="progress_bar" style="display: none; width: 70px;">
+                                                <div class="color"></div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div class="card-block">
+                                        <form id="videoForm" enctype="multipart/form-data">
+                                            <input type="file" name="video" accept="video/*" style="width: 100%;">
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="card" id="Analyzed_Video" style="display: none;">
+                                    <div class="card-header">
+                                        <h5>Analyzed Video</h5>
+                                        <div style="display: flex; flex-direction: row;">
+                                            <a id="reloadLink" href="#" style="margin-right: 20px;">
+                                                <i class="feather icon-refresh-cw"></i>
+                                            </a>
+                                            <a id="downloadLink" href="#" download="analyze_video">
+                                                <i class="feather icon-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-block" style="display: flex; justify-content: space-between;">
+                                        <div class="col-md-4" style="display: flex;">
+                                            <video id="processedVideo" controls>
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                        <div class="col-xl-4 col-md-6">
+                                            <div class="card">
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-check f-30 text-c-green"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="bras">0 °</h3>
+                                                            <span class="d-block text-uppercase">Angle bras
+                                                                (rouge)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="jambe">0 °</h3>
+                                                            <span class="d-block text-uppercase">Angle jambe
+                                                                (vert)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-check f-30 text-c-green"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="Bras/buste">0 °</h3>
+                                                            <span class="d-block text-uppercase">Angle
+                                                                Bras/buste (bleu)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="tronc">0 °</h3>
+                                                            <span class="d-block text-uppercase">Angle tronc
+                                                                (jaune)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="dos">0 °</h3>
+                                                            <span class="d-block text-uppercase">Angle
+                                                                dos</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5>Line [ Smooth ] Chart</h5>
+                                        </div>
+                                        <div class="card-block">
+                                            <div id="morris-line-smooth-chart" class="ChartShadow" style="height:300px">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- [ Main Content ] end -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script src="{{ config.ASSETS_ROOT }}/plugins/chart-morris/js/raphael.min.js"></script>
+<script src="{{ config.ASSETS_ROOT }}/plugins/chart-morris/js/morris.min.js"></script>
+
+<script>
+    document.getElementById('analyzeButton').addEventListener('click', function () {
+        var formData = new FormData(document.getElementById('videoForm'));
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{{ url_for("home_blueprint.analyze_video") }}', true);
+
+        document.getElementById('progress_bar').style.display = ''
+        document.getElementById('analyse_btn_txt').style.display = 'none'
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                var videoUrl = response.processed_video_url;
+                var anglesData = response.angles_data;
+                var fps = response.fps;
+
+                // Set the video source and load it
+                var videoPlayer = document.getElementById('processedVideo');
+                videoPlayer.src = videoUrl;
+                videoPlayer.load();
+
+                // Update angles display in sync with video playback
+                videoPlayer.ontimeupdate = function () {
+                    updateAnglesDisplay(
+                        Math.floor(videoPlayer.currentTime * fps),
+                        anglesData
+                    );
+                };
+
+                updateChart(anglesData)
+
+                // Update display page
+                document.getElementById('Upload_Video').style.display = 'None';
+                document.getElementById('Analyzed_Video').style.display = '';
+
+                document.getElementById('progress_bar').style.display = 'None'
+                document.getElementById('analyse_btn_txt').style.display = ''
+
+            } else {
+                console.log(xhr);
+            }
+        };
+
+        xhr.send(formData);
+    });
+
+    function updateAnglesDisplay(currentTime, anglesData) {
+        // Update the angles display on the webpage
+        document.getElementById('bras').textContent = anglesData[currentTime]["bras"] + "°";
+        document.getElementById('Bras/buste').textContent = anglesData[currentTime]["Bras/buste"] + "°"
+        document.getElementById('dos').textContent = anglesData[currentTime]["dos"] + "°"
+        document.getElementById('jambe').textContent = anglesData[currentTime]["jambe"] + "°"
+        document.getElementById('tronc').textContent = anglesData[currentTime]["tronc"] + "°"
+    }
+
+    document.getElementById('reloadLink').addEventListener('click', function () {
+        document.getElementById('Upload_Video').style.display = '';
+        document.getElementById('Analyzed_Video').style.display = 'None';
+    });
+
+    function updateChart(chart_data) {
+        $(document).ready(function () {
+            setTimeout(function () {
+                Morris.Line({
+                    element: 'morris-line-smooth-chart',
+                    data: chart_data,
+                    xkey: 'i',
+                    redraw: true,
+                    resize: true,
+                    ykeys: ['bras', 'jambe', 'Bras/buste', 'tronc', 'dos'],
+                    hideHover: 'auto',
+                    responsive: true,
+                    labels: ['bras', 'jambe', 'Bras/buste', 'tronc', 'dos' ],
+                    lineColors: ['#1de9b6', '#A389D4', '#1de9b6', '#A389D4', '#1de9b6']
+                });
+            }, 700);
+        });
+    }
+
+
+</script>
+{% endblock javascripts %}

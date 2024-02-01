@@ -1,0 +1,98 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Page Blank {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- [ Main Content ] start -->
+<div class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+        <div class="pcoded-content">
+            <div class="pcoded-inner-content">
+                <!-- [ breadcrumb ] start -->
+                <div class="page-header">
+                    <div class="page-block">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <div class="page-header-title">
+                                    <h5 class="m-b-10">Live Analytics</h5>
+                                </div>
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+                                    <li class="breadcrumb-item"><a href="javascript:">Bike Fitting</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ breadcrumb ] end -->
+                <div class="main-body">
+                    <div class="page-wrapper">
+                        <!-- [ Main Content ] start -->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Bike Fitting on Live</h5>
+                                        <!-- Rounded switch -->
+                                        <label class="switch">
+                                            <input id="videoControl" name="videoControl" type="checkbox">
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div class="card-block">
+                                        <img id="videoStream" width="50%" style="display: None;" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- [ Main Content ] end -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    document.getElementById('videoControl').addEventListener('change', function () {
+        if (this.checked) {
+            shutDownVideo();
+        } else {
+            shutDownVideo();
+        }
+    });
+
+    function restartVideo() {
+        var videoElement = document.getElementById('videoStream');
+        // Append a unique query parameter to the src to force reload
+        var uniqueSrc = "{{ url_for('home_blueprint.video') }}" + "?t=" + new Date().getTime();
+        videoElement.src = uniqueSrc; // Reset the src to restart the video
+        videoElement.style.display = '';
+    }
+
+    function shutDownVideo() {
+        // Send a request to the Flask server to shut down the video stream
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "{{ url_for('home_blueprint.shutdown_video') }}", true);
+        xhr.send();
+
+        // Hide the video element or display a placeholder
+        if (document.getElementById('videoStream').style.display == 'none') {
+            console.log("[VIDEO] Resart the streaming")
+            restartVideo()
+        } else {
+            document.getElementById('videoStream').style.display = 'none';
+            console.log("[VIDEO] Close the streaming")
+        }
+    }
+</script>
+{% endblock javascripts %}

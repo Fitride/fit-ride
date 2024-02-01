@@ -1,0 +1,74 @@
+<!-- [ navigation menu ] start -->
+<nav class="pcoded-navbar">
+    <div class="navbar-wrapper">
+        <div class="navbar-brand header-logo">
+            <a href="/" class="b-brand">
+                <div class="b-bg">
+                    <i class="feather icon-trending-up"></i>
+                </div>
+                <span class="b-title">Fit Ride</span>
+            </a>
+            <a class="mobile-menu" id="mobile-collapse" href="javascript:"><span></span></a>
+        </div>
+        <div class="navbar-content scroll-div">
+            <ul class="nav pcoded-inner-navbar">
+                <li data-username="Computer Vision on Pose Detection for Bike Fiting" 
+                    class="nav-item {% if 'index' in segment %} active {% endif %}">
+                    <a href="/" class="nav-link "><span class="pcoded-micon"><i class="feather icon-home"></i></span><span
+                            class="pcoded-mtext">Home</span></a>
+                </li>
+                             
+                <li data-username="basic components Button Alert Badges breadcrumb Paggination progress Tooltip popovers Carousel Cards Collapse Tabs pills Modal Grid System Typography Extra Shadows Embeds"
+                    class="nav-item pcoded-hasmenu ">
+                    <a href="javascript:" class="nav-link "><span class="pcoded-micon"><i class="feather icon-box"></i></span><span
+                            class="pcoded-mtext">Analytics</span></a>
+                    <ul class="pcoded-submenu">
+                        <li class=""><a href="/icon-feather.html" class="">Feather<span
+                                class="pcoded-badge label label-danger">NEW</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item pcoded-menu-caption">
+                    <label>Live Analytics</label>
+                </li>
+                <li data-username="Live Analytics" 
+                    class="nav-item {% if 'chart-morris' in segment %} active {% endif %}">
+                    <a href="/live_analytics.html" class="nav-link "><span
+                        class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span><span class="pcoded-mtext">Bike Fitting</span></a>
+                </li>
+                <li class="nav-item pcoded-menu-caption">
+                    <label>Update Analytics</label>
+                </li>
+                <li data-username="Charts Morris" 
+                    class="nav-item {% if 'chart-morris' in segment %} active {% endif %}">
+                    <a href="/chart-morris.html" class="nav-link "><span
+                        class="pcoded-micon"><i class="feather icon-pie-chart"></i></span><span class="pcoded-mtext">Chart</span></a>
+                </li>
+                <li data-username="Update Video" 
+                    class="nav-item {% if 'chart-morris' in segment %} active {% endif %}">
+                    <a href="/up_video.html" class="nav-link "><span
+                        class="pcoded-micon"><i class="feather icon-video"></i></span><span class="pcoded-mtext">Update Video</span></a>
+                </li>
+                <li data-username="Update Video" 
+                    class="nav-item {% if 'chart-morris' in segment %} active {% endif %}">
+                    <a href="/up_photo.html" class="nav-link "><span
+                        class="pcoded-micon"><i class="feather icon-camera"></i></span><span class="pcoded-mtext">Update Photo</span></a>
+                </li>
+                <li class="nav-item pcoded-menu-caption">
+                    <label>Settings</label>
+                </li>
+                <li data-username="Profile Page" 
+                    class="nav-item {% if 'profile' in segment %} active {% endif %}">
+                    <a href="/profile.html" class="nav-link">
+                        <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                            <span class="pcoded-mtext">Profile Page</span></a>
+                </li>   
+                <li data-username="Disabled Menu" class="nav-item">
+                    <a href="{{ url_for('authentication_blueprint.logout') }}" class="nav-link">
+                        <span class="pcoded-micon"><i class="feather icon-power"></i></span><span class="pcoded-mtext">Logout</span>
+                    </a>
+                </li>                          
+            </ul>
+        </div>
+    </div>
+</nav>
+<!-- [ navigation menu ] end -->

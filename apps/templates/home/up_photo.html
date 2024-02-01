@@ -1,0 +1,186 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Update Photo {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- [ Main Content ] start -->
+<div class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+        <div class="pcoded-content">
+            <div class="pcoded-inner-content">
+                <!-- [ breadcrumb ] start -->
+                <div class="page-header">
+                    <div class="page-block">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <div class="page-header-title">
+                                    <h5 class="m-b-10">Update Analytics</h5>
+                                </div>
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+                                    <li class="breadcrumb-item"><a href="javascript:">Update Photo</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ breadcrumb ] end -->
+                <div class="main-body">
+                    <div class="page-wrapper">
+                        <!-- [ Main Content ] start -->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="card" id="Update_Photo_Form">
+                                    <div class="card-header">
+                                        <h5>Upload and Analyze a Photo</h5>
+                                        <button type="button" id="analyzeButton" class="btn btn-primary">Analyze</button>
+                                    </div>
+                                    <div class="card-block">
+                                        <form id="photoForm" enctype="multipart/form-data">
+                                            <input type="file" name="photo" accept="image/*">
+                                        </form>
+                                    </div>
+                                </div>
+                                <!-- Analyzed Image Display Area -->
+                                <div class="card" id="Analyzed_Photo" style="display: none;">
+                                    <div class="card-header">
+                                        <h5>Analyzed Image</h5>
+                                        <div style="display: flex; flex-direction: row;">
+                                            <a id="reloadLink" href="#" style="margin-right: 20px;">
+                                                <i class="feather icon-refresh-cw"></i>
+                                            </a>
+                                            <a id="downloadLink" href="#" download="analyzed_image">
+                                                <i class="feather icon-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="card-block" style="display: flex; justify-content: space-between;">
+                                        <img id="analyzedImage" src="" alt="Analyzed Image" class="img-fluid"
+                                            style="display: none;">
+                                        <div class="col-xl-4 col-md-6">
+                                            <div class="card">
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-check f-30 text-c-green"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="bras">235</h3>
+                                                            <span class="d-block text-uppercase">Angle bras (rouge)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="jambe"></h3>
+                                                            <span class="d-block text-uppercase">Angle jambe (vert)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-check f-30 text-c-green"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="Bras/buste"></h3>
+                                                            <span class="d-block text-uppercase">Angle Bras/buste (bleu)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block border-bottom">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="tronc"></h3>
+                                                            <span class="d-block text-uppercase">Angle tronc (jaune)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-block">
+                                                    <div class="row d-flex align-items-center">
+                                                        <div class="col-auto">
+                                                            <i class="feather icon-arrow-up-right f-30 text-c-blue"></i>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h3 class="f-w-300" id="dos"></h3>
+                                                            <span class="d-block text-uppercase">Angle dos</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                    
+                                </div>
+
+                            </div>
+                        </div>
+                        <!-- [ Main Content ] end -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    document.getElementById('analyzeButton').addEventListener('click', function () {
+        var formData = new FormData(document.getElementById('photoForm'));
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{{ url_for("home_blueprint.analyze_photo") }}', true);
+
+        // Handle the response from the server
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+
+                // Assuming the server returns the URL of the analyzed image
+                var response = JSON.parse(xhr.responseText);
+                var analyzedImageUrl = response.src_url;
+                var angles = response.angles_data;
+
+                document.getElementById('bras').textContent = angles["bras"] + "°"
+                document.getElementById('Bras/buste').textContent = angles["Bras/buste"]  + "°"
+                document.getElementById('dos').textContent = angles["dos"]  + "°"
+                document.getElementById('jambe').textContent = angles["jambe"]  + "°"
+                document.getElementById('tronc').textContent = angles["tronc"]  + "°"
+
+                // Update the src of the img tag and show the image and download link
+                document.getElementById('Analyzed_Photo').style.display = ''
+                document.getElementById('analyzedImage').src = analyzedImageUrl;
+                document.getElementById('analyzedImage').style.display = 'block';
+                document.getElementById('downloadLink').href = analyzedImageUrl;
+                document.getElementById('downloadLink').style.display = 'block';
+
+                // Update display page
+                document.getElementById('Update_Photo_Form').style.display = 'None';
+            } else {
+                alert('An error occurred!');
+            }
+        };
+
+        xhr.send(formData);
+    });
+    document.getElementById('reloadLink').addEventListener('click', function () {
+        document.getElementById('Analyzed_Photo').style.display = 'None';
+        document.getElementById('Update_Photo_Form').style.display = '';
+    });
+
+</script>
+{% endblock javascripts %}
