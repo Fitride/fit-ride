@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Page Blank {% endblock %} 
+{% block title %} Home {% endblock %} 
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}{% endblock stylesheets %}
@@ -21,11 +21,30 @@
                                 <div class="col-sm-12">
                                     <div class="card">
                                         <div class="card-header">
-                                            <h5>Hello card</h5>
+                                            <h5>Bienvenue chez Fit Ride</h5>
                                         </div>
                                         <div class="card-block">
-                                            <p>"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                                            <p>Fit Ride est une application web innovante conçue pour les cyclistes de tous niveaux qui cherchent à optimiser leur expérience de cyclisme. 
+                                                Que vous soyez un coureur professionnel ou un amateur de balades à vélo, Fit Ride vous propose des outils personnalisés pour ajuster précisément votre vélo à votre morphologie. 
+                                                L'application guide les utilisateurs à travers une série de mesures corporelles et de paramètres du vélo, et utilise des algorithmes avancés pour recommander les réglages optimaux, 
+                                                tels que la hauteur de selle, le recul de selle, et la position du guidon. En assurant une configuration sur mesure, Fit Ride vise à améliorer le confort, 
+                                                l'efficacité du pédalage et à réduire le risque de blessures. Grâce à un modèle de pose détection. A travers son interface conviviale et à des tutoriels interactifs, 
+                                                chaque cycliste peut facilement apporter les modifications nécessaires pour une expérience de cyclisme améliorée et plus agréable.
                                             </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5>Angles important pour votre santé !</h5>
+                                        </div>
+                                        <div class="card-block" style="display: flex; align-items: center; justify-content: center;">
+                                            <img src="{{ url_for('static', filename='assets/images/home/AnglesPhoto.png') }}"
+                                                style="display: flex;"
+                                            />
                                         </div>
                                     </div>
                                 </div>

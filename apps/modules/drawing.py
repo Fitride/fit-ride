@@ -63,7 +63,7 @@ class Drawing:
         return shoulder, elbow, wrist, knee, ankle, hip, horizontal
     
     @staticmethod
-    def draw_arc(frame: np.ndarray, center: tuple, start_point: tuple, end_point: tuple, color: tuple, transparency: float = 0.5, is_back_angle:bool=False) -> np.ndarray:
+    def draw_arc(frame: np.ndarray, center: tuple, start_point: tuple, end_point: tuple, angle:float, color: tuple, transparency: float = 0.5, is_back_angle:bool=False, enable_text:bool=True) -> np.ndarray:
         """
             Draw arc corresponding to the angle.
             Args:
@@ -78,32 +78,43 @@ class Drawing:
                 None
         """
         overlay = frame.copy()
+
         # Define vector parameters
         vector_color=(0, 0, 255)
         vector_scale=0.5
         dot_radius=3
+        text_color = (255, 255, 255)  # White color for the angle text
+
         # Convert points into numpy vectors
         center_np = np.array(center)
         start_point_np = np.array(start_point)
         end_point_np = np.array(end_point)
+
         # Calculate the vectors
         vec_start = start_point_np - center_np
         vec_end = end_point_np - center_np
+
         # Scale down the vectors
         vec_start = vec_start * vector_scale
         vec_end = vec_end * vector_scale
+
         # Calculate new start and end points for the shorter vectors
         start_point_short = center_np + vec_start
         end_point_short = center_np + vec_end
+
         # Calculate axes length as the longest distance to the center
         axes_length = (int(np.linalg.norm(vec_start) / 2), int(np.linalg.norm(vec_end) / 2))
+
         if is_back_angle:
             vec_end = end_point_np - center_np  # Hip-acromion vector
+
             # Use the length of the hip-acromion vector for both axes to avoid distortion
             axes_length = (int(np.linalg.norm(vec_end) / 2), int(np.linalg.norm(vec_end) / 2))
             
             angle_start = 180  # Horizontal vector will start at 0 degrees
-            angle_hip_acromion  = np.degrees(np.arctan2(vec_end[1], vec_end[0])) # Calculate angle of hip-acromion vector
+
+            # Calculate angle of hip-acromion vector
+            angle_hip_acromion  = np.degrees(np.arctan2(vec_end[1], vec_end[0])) 
             angle_end = (angle_hip_acromion + 180) % 360
 
             if angle_end < angle_start:
@@ -112,16 +123,29 @@ class Drawing:
         else:
             angle_start = np.degrees(np.arctan2(vec_start[1], vec_start[0]))
             angle_end = np.degrees(np.arctan2(vec_end[1], vec_end[0]))
+
+        #Drawing ellipse and text
         cv2.ellipse(overlay, tuple(center), axes_length, 0, angle_start, angle_end, color, thickness=-1)
         cv2.line(overlay, tuple(center), tuple(start_point_short.astype(int)), vector_color, thickness=2)
         cv2.line(overlay, tuple(center), tuple(end_point_short.astype(int)), vector_color, thickness=2)
         cv2.circle(overlay, tuple(start_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
         cv2.circle(overlay, tuple(end_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
+
+        # Determine a position for the angle text
+        text_position = tuple((center_np + (vec_start + vec_end) * 0.2).astype(int))
+        font_scale = 0.1 * min(axes_length) / (80.0 / np.sqrt(angle))
+        
+        # Here we ensure the angle text uses the unicode character for degree
+        angle_text = "{}".format(int(angle))
+
+        if enable_text:
+            cv2.putText(overlay, angle_text, text_position, cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, 2, cv2.LINE_AA)
+            
         cv2.addWeighted(overlay, transparency, frame, 1 - transparency, 0, frame)
 
-        return frame
+        return frame 
 
-    def compute_and_drawing_processing (self, frame, i:int=0, enable_cvtColor:bool=True):
+    def compute_and_drawing_processing (self, frame, i:int=0, enable_cvtColor:bool=True, enable_text:bool=True):
         """
             Function to compute and drawing processing
             Args:
@@ -165,12 +189,7 @@ class Drawing:
                 hip = (int(hip[0] * w), int(hip[1] * h))
                 horizontal = (int(horizontal[0] * w), int(horizontal[1] * h))
 
-                # Dessinez les ellipses pour chaque angle calculé
-                self.draw_arc(frame, elbow, wrist, shoulder, color=(255, 0, 0, 128), transparency=0.5)
-                self.draw_arc(frame, knee, hip, ankle, color=(0, 255, 0), transparency=0.5)
-                self.draw_arc(frame, shoulder, hip, wrist, color=(0, 0, 255), transparency=0.5)
-                self.draw_arc(frame, hip, ankle, shoulder, color=(255, 255, 0), transparency=0.5, is_back_angle=True)
-
+                # Save angles values
                 angles_value = {
                     "i": i,
                     "bras": round(Angles.calculate_angle(shoulder, elbow, wrist), 2),
@@ -179,6 +198,12 @@ class Drawing:
                     "tronc": round(Angles.calculate_angle(shoulder, hip, ankle), 2),
                     "dos": round(Angles.calculate_angle(horizontal, hip, shoulder), 2)
                 }
+
+                # Dessinez les ellipses pour chaque angle calculé
+                self.draw_arc(frame, elbow, wrist, shoulder, angles_value["bras"],color=(255, 0, 0, 128), transparency=0.5, enable_text=enable_text)
+                self.draw_arc(frame, knee, hip, ankle, angles_value["jambe"], color=(0, 255, 0), transparency=0.5, enable_text=enable_text)
+                self.draw_arc(frame, shoulder, hip, wrist, angles_value["Bras/buste"], color=(0, 0, 255), transparency=0.5, enable_text=enable_text)
+                self.draw_arc(frame, hip, ankle, shoulder, angles_value["dos"], color=(255, 255, 0), transparency=0.5, is_back_angle=True, enable_text=enable_text)
 
                 # Reset origin color for display
                 if enable_cvtColor:
@@ -248,7 +273,7 @@ class Drawing:
             frame = cv2.imread(image_path)
 
             # Processing et drawing sur la frame
-            frame, angles_value = self.compute_and_drawing_processing(frame=frame, enable_cvtColor=False)
+            frame, angles_value = self.compute_and_drawing_processing(frame=frame, enable_cvtColor=False, enable_text=False)
 
             # Convertir l'frame CV2 en un objet frame PIL pour l'affichage dans Streamlit
             pil_image = Image.fromarray(frame)
