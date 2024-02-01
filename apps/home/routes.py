@@ -29,7 +29,7 @@ def video():
     draw_utils = Drawing()  # Initialize Drawing class
     is_camera_active, camera = draw_utils.initialize_camera(
         camera)  # Ensure the camera is initialized
-    return Response(draw_utils.generate_frames(is_camera_active, camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(draw_utils.process_livestream(is_camera_active, camera), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @blueprint.route('/shutdown_video', methods=['GET'])
@@ -65,8 +65,7 @@ def analyze_photo():
             temp_file_id = str(uuid.uuid4())
             temp_files[temp_file_id] = temp_file.name
 
-            drawed_image, angles_data = draw_image.calculate_angles_in_image(
-                temp_file.name)
+            drawed_image, angles_data = draw_image.process_frame_file(temp_file.name)
             drawed_image.save(temp_file.name)
 
         return jsonify({
@@ -97,7 +96,7 @@ def analyze_video():
             temp_files[temp_file_id] = temp_file.name
 
             draw_analysis = Drawing()
-            drawed_image_temp_name, angles_data, fps_input = draw_analysis.run_on_video(
+            drawed_image_temp_name, angles_data, fps_input = draw_analysis.process_video_file(
                 temp_file.name)
 
             temp_file_id_drawed = str(uuid.uuid4())

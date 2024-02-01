@@ -22,15 +22,20 @@ class Angles:
             Returns:
                 float: The angle between the three points.
         """
+        # Convert points into numpy vectors
+        point1 = np.array(a)
+        point2 = np.array(b)
+        point3 = np.array(c)
+
+        # Calculate the vectors between the points
+        vector1 = point1 - point2
+        vector2 = point3 - point2
+
+        # Use the cosine law to calculate the angle
+        cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+        angle = np.arccos(cosine_angle)
         
-        a = np.array(a)
-        b = np.array(b)
-        c = np.array(c)
+        # Convert the angle to degrees
+        angle_degrees = np.degrees(angle)
 
-        radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
-        angle = np.abs(radians * 180.0 / np.pi)
-
-        if angle > 180.0:
-            angle = 360 - angle
-
-        return angle
+        return angle_degrees

@@ -49,7 +49,7 @@ class Drawing:
                 landmarks: list of landmarks
                 mp_pose: mediapipe pose class 
             Returns:
-                list of landmarks (shoulder, elbow, wrist, knee, ankle, hip)
+                list of landmarks (shoulder, elbow, wrist, knee, ankle, hip, horizontal)
         """
         shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].y]
         elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].y]
@@ -57,11 +57,139 @@ class Drawing:
         knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE].y]
         ankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].y]
         hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+        horizontal = [hip[0] - 1, hip[1]]
 
-        return shoulder, elbow, wrist, knee, ankle, hip
+        return shoulder, elbow, wrist, knee, ankle, hip, horizontal
     
+    @staticmethod
+    def draw_arc(frame: np.ndarray, center: tuple, start_point: tuple, end_point: tuple, color: tuple, transparency: float = 0.5, is_back_angle:bool=False) -> np.ndarray:
+        """
+            Draw arc corresponding to the angle.
+            Args:
+                frame (numpy.ndarray): The frame to draw on.
+                center (tuple): The center of the arc.
+                start_point (tuple): The start point of the arc.
+                end_point (tuple): The end point of the arc.
+                color (tuple): The color of the arc.
+                transparency (float): The transparency of the arc.
+                is_back_angle (bool): Whether the angle is back angle or not. Default is False.
+            Returns:
+                None
+        """
+        overlay = frame.copy()
+        # Define vector parameters
+        vector_color=(0, 0, 255)
+        vector_scale=0.5
+        dot_radius=3
+        # Convert points into numpy vectors
+        center_np = np.array(center)
+        start_point_np = np.array(start_point)
+        end_point_np = np.array(end_point)
+        # Calculate the vectors
+        vec_start = start_point_np - center_np
+        vec_end = end_point_np - center_np
+        # Scale down the vectors
+        vec_start = vec_start * vector_scale
+        vec_end = vec_end * vector_scale
+        # Calculate new start and end points for the shorter vectors
+        start_point_short = center_np + vec_start
+        end_point_short = center_np + vec_end
+        # Calculate axes length as the longest distance to the center
+        axes_length = (int(np.linalg.norm(vec_start) / 2), int(np.linalg.norm(vec_end) / 2))
+        if is_back_angle:
+            vec_end = end_point_np - center_np  # Hip-acromion vector
+            # Use the length of the hip-acromion vector for both axes to avoid distortion
+            axes_length = (int(np.linalg.norm(vec_end) / 2), int(np.linalg.norm(vec_end) / 2))
+            
+            angle_start = 180  # Horizontal vector will start at 0 degrees
+            angle_hip_acromion  = np.degrees(np.arctan2(vec_end[1], vec_end[0])) # Calculate angle of hip-acromion vector
+            angle_end = (angle_hip_acromion + 180) % 360
 
-    def generate_frames(self, is_camera_active, camera):
+            if angle_end < angle_start:
+                angle_end += 180
+            angle_end %= 360
+        else:
+            angle_start = np.degrees(np.arctan2(vec_start[1], vec_start[0]))
+            angle_end = np.degrees(np.arctan2(vec_end[1], vec_end[0]))
+        cv2.ellipse(overlay, tuple(center), axes_length, 0, angle_start, angle_end, color, thickness=-1)
+        cv2.line(overlay, tuple(center), tuple(start_point_short.astype(int)), vector_color, thickness=2)
+        cv2.line(overlay, tuple(center), tuple(end_point_short.astype(int)), vector_color, thickness=2)
+        cv2.circle(overlay, tuple(start_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
+        cv2.circle(overlay, tuple(end_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
+        cv2.addWeighted(overlay, transparency, frame, 1 - transparency, 0, frame)
+
+        return frame
+
+    def compute_and_drawing_processing (self, frame, i:int=0, enable_cvtColor:bool=True):
+        """
+            Function to compute and drawing processing
+            Args:
+                frame: image to process
+                i: index of frame
+            Returns:
+                img: image with processing
+                angles_value: dict of angles (bras, jambe, bras/buste, tronc, dos)
+        """
+        try:
+            # Change color of frame for better processing
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, _ = frame.shape
+            results = self.pose.process(frame)
+            frame.flags.writeable = True
+            angles_value = {}
+
+            if results.pose_landmarks:
+                landmarks = results.pose_landmarks.landmark
+
+                shoulder, elbow, wrist, knee, ankle, hip, horizontal = Drawing.coordonnate_association(landmarks, self.mp_pose)
+
+                for connection in self.custom_pose_connections:
+                    start_landmark = connection[0]
+                    end_landmark = connection[1]
+                    start_point = (int(landmarks[start_landmark].x * w), int(landmarks[start_landmark].y * h))
+                    end_point = (int(landmarks[end_landmark].x * w), int(landmarks[end_landmark].y * h))
+                    cv2.line(frame, start_point, end_point, (0, 255, 0), 3) 
+
+                hip_pixel = (int(hip[0] * w), int(hip[1] * h))
+                line_length = 80
+                horizontal_start = (hip_pixel[0] - line_length, hip_pixel[1])
+                horizontal_end = hip_pixel
+                cv2.line(frame, horizontal_start, horizontal_end, (255, 0, 0), 1)
+
+                shoulder = (int(shoulder[0] * w), int(shoulder[1] * h))
+                elbow = (int(elbow[0] * w), int(elbow[1] * h))
+                wrist = (int(wrist[0] * w), int(wrist[1] * h))
+                knee = (int(knee[0] * w), int(knee[1] * h))
+                ankle = (int(ankle[0] * w), int(ankle[1] * h))
+                hip = (int(hip[0] * w), int(hip[1] * h))
+                horizontal = (int(horizontal[0] * w), int(horizontal[1] * h))
+
+                # Dessinez les ellipses pour chaque angle calculé
+                self.draw_arc(frame, elbow, wrist, shoulder, color=(255, 0, 0, 128), transparency=0.5)
+                self.draw_arc(frame, knee, hip, ankle, color=(0, 255, 0), transparency=0.5)
+                self.draw_arc(frame, shoulder, hip, wrist, color=(0, 0, 255), transparency=0.5)
+                self.draw_arc(frame, hip, ankle, shoulder, color=(255, 255, 0), transparency=0.5, is_back_angle=True)
+
+                angles_value = {
+                    "i": i,
+                    "bras": round(Angles.calculate_angle(shoulder, elbow, wrist), 2),
+                    "jambe": round(Angles.calculate_angle(hip, knee, ankle), 2),
+                    "Bras/buste": round(Angles.calculate_angle(hip, shoulder, wrist), 2),
+                    "tronc": round(Angles.calculate_angle(shoulder, hip, ankle), 2),
+                    "dos": round(Angles.calculate_angle(horizontal, hip, shoulder), 2)
+                }
+
+                # Reset origin color for display
+                if enable_cvtColor:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        except Exception as e:
+            print("[ERROR] Unable to process the image: ", e)
+            pass
+
+        return frame, angles_value
+
+    def process_livestream(self, is_camera_active, camera):
         """
             Function to display computer vision solution 
             and draw the skeleton on the screen.
@@ -77,210 +205,69 @@ class Drawing:
                 break
                 #raise RuntimeError("Failed to read camera frame")
 
-            h, w, c = frame.shape
             frame = cv2.flip(frame, 1)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = self.pose.process(frame)
             
-            frame.flags.writeable = True
+            frame, angles_value = self.compute_and_drawing_processing(frame=frame)
 
-            if results.pose_landmarks:
-                landmarks = results.pose_landmarks.landmark
+            # Initialize frame_bytes as an empty byte string
+            frame_bytes = b''
 
-                for connection in self.custom_pose_connections:
-                    start_landmark = connection[0]
-                    end_landmark = connection[1]
-                    start_point = (int(landmarks[start_landmark].x * w), int(landmarks[start_landmark].y * h))
-                    end_point = (int(landmarks[end_landmark].x * w), int(landmarks[end_landmark].y * h))
-                    cv2.line(frame, start_point, end_point, (0, 255, 0), 3) 
-
-                shoulder, elbow, wrist, knee, ankle, hip = Drawing.coordonnate_association(landmarks, self.mp_pose)
-
-                horizontal = [0, hip[1]]  # Ceci crée une ligne horizontale au niveau de la hanche
-
-                # Calculer les angles
-                angle_acromion_coude_poignet = Angles.calculate_angle(shoulder, elbow, wrist)
-                angle_hanche_genou_cheville = Angles.calculate_angle(hip, knee, ankle)
-                angle_bassin_acromion_poignet = Angles.calculate_angle(hip, shoulder, wrist)
-                angle_acromion_bassin_cheville = Angles.calculate_angle(shoulder, hip, ankle)
-                angle_dos = Angles.calculate_angle(hip, horizontal, shoulder)
-
-                shoulder = (int(shoulder[0] * w), int(shoulder[1] * h))
-                elbow = (int(elbow[0] * w), int(elbow[1] * h))
-                wrist = (int(wrist[0] * w), int(wrist[1] * h))
-                knee = (int(knee[0] * w), int(knee[1] * h))
-                ankle = (int(ankle[0] * w), int(ankle[1] * h))
-                hip = (int(hip[0] * w), int(hip[1] * h))
-                horizontal = (int(horizontal[0] * w), int(horizontal[1] * h))
-
-                # Dessinez les ellipses pour chaque angle calculé
-                Drawing.draw_arc(frame, elbow, shoulder, wrist, angle_acromion_coude_poignet, color=(255, 0, 0, 128), transparency=0.5)
-                Drawing.draw_arc(frame, knee, ankle, hip, angle_hanche_genou_cheville, color=(0, 255, 0), transparency=0.5)
-                Drawing.draw_arc(frame, shoulder, wrist, hip, angle_bassin_acromion_poignet, color=(0, 0, 255), transparency=0.5)
-                Drawing.draw_arc(frame, hip, shoulder, ankle, angle_acromion_bassin_cheville, color=(255, 255, 0), transparency=0.5)
-
-                # Initialize frame_bytes as an empty byte string
-                frame_bytes = b''
-
-                # Convert frame back to BGR for encoding
-                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                success, buffer = cv2.imencode('.jpg', frame_bgr)
-                if success:
-                    frame_bytes = buffer.tobytes()
-
-                # Only yield if frame_bytes is not empty
-                if frame_bytes:
-                    yield (
-                        b'--frame\r\n'
-                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n'
-                    )
-                else:
-                    # Handle the case where encoding failed, e.g., by logging an error or yielding a placeholder image
-                    print("[ERROR] Encoding failed")
-                    pass
-
-                # Update UI with the processed frame
-                _, buffer = cv2.imencode('.jpg', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))  # Ensure frame is in BGR format for encoding
+            success, buffer = cv2.imencode('.jpg', frame)
+            if success:
                 frame_bytes = buffer.tobytes()
+
+            # Only yield if frame_bytes is not empty
+            if frame_bytes:
+                yield (
+                    b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n'
+                )
+            else:
+                # Handle the case where encoding failed, e.g., by logging an error or yielding a placeholder image
+                print("[ERROR] Encoding failed")
+                pass
+
+            # Update UI with the processed frame
+            _, buffer = cv2.imencode('.jpg', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))  # Ensure frame is in BGR format for encoding
+            frame_bytes = buffer.tobytes()
 
         # Release the camera and close the window if is_camera_active == False
         camera.release()
 
-    @staticmethod
-    def draw_arc(frame: np.ndarray, center: tuple, start_point: tuple, end_point: tuple, angle: float, color: tuple, transparency: float = 0.5) -> None:
+    def process_frame_file(self, image_path:str):
         """
-            Draw arc corresponding to the angle.
+            Calculate and draw angle in Image
             Args:
-                frame (numpy.ndarray): The frame to draw on.
-                center (tuple): The center of the arc.
-                start_point (tuple): The start point of the arc.
-                end_point (tuple): The end point of the arc.
-                angle (float): The angle of the arc.
-                color (tuple): The color of the arc.
-                transparency (float): The transparency of the arc.
+                image_path (str): The path to the image.
             Returns:
-                None
+                tuple: The image with angles drawn and the angles data.
         """
-        overlay = frame.copy()
-        vector_color = (0, 0, 255)
-        vector_scale = 0.5
-        dot_radius = 3
+        try:
+            # Lecture de l'image
+            frame = cv2.imread(image_path)
 
-        # Convert points into numpy vectors
-        center_np = np.array(center)
-        start_point_np = np.array(start_point)
-        end_point_np = np.array(end_point)
+            # Processing et drawing sur la frame
+            frame, angles_value = self.compute_and_drawing_processing(frame=frame, enable_cvtColor=False)
 
-        # Calculate the vectors
-        vec_start = start_point_np - center_np
-        vec_end = end_point_np - center_np
+            # Convertir l'frame CV2 en un objet frame PIL pour l'affichage dans Streamlit
+            pil_image = Image.fromarray(frame)
+            
+            return pil_image, angles_value
+        
+        except Exception as e:
+            print("[ERROR] Unable to process the image: ", e)
 
-        # Scale down the vectors
-        vec_start = vec_start * vector_scale
-        vec_end = vec_end * vector_scale
-
-        # Calculate new start and end points for the shorter vectors
-        start_point_short = center_np + vec_start
-        end_point_short = center_np + vec_end
-
-        # Calculate axes length as the longest distance to the center
-        axes_length = (int(np.linalg.norm(vec_start) / 2), int(np.linalg.norm(vec_end) / 2))
-
-        # Calculate starting and ending angles in frame coordinate space
-        angle_start = np.degrees(np.arctan2(vec_start[1], vec_start[0])) % 360
-        angle_end = angle_start + angle
-
-        angle_start = angle_start % 360
-        angle_end = angle_end % 360
-
-        cv2.ellipse(overlay, tuple(center), axes_length, 0, angle_start, angle_end, color, thickness=-1)
-
-        cv2.line(overlay, tuple(center), tuple(start_point_short.astype(int)), vector_color, thickness=2)
-        cv2.line(overlay, tuple(center), tuple(end_point_short.astype(int)), vector_color, thickness=2)
-
-        cv2.circle(overlay, tuple(start_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
-        cv2.circle(overlay, tuple(end_point_short.astype(int)), dot_radius, vector_color, thickness=-1)
-
-        cv2.addWeighted(overlay, transparency, frame, 1 - transparency, 0, frame)
-
-        return frame
-
-    def calculate_angles_in_image(self, image_path:str):
-        with self.mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-            image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            results = pose.process(image)
-            try:
-                landmarks = results.pose_landmarks.landmark
-                # Obtain landmark coordinates
-                shoulder = [landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER].x, landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER].y]
-                elbow = [landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW].x, landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW].y]
-                wrist = [landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST].x, landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST].y]
-                knee = [landmarks[self.mp_pose.PoseLandmark.LEFT_KNEE].x, landmarks[self.mp_pose.PoseLandmark.LEFT_KNEE].y]
-                ankle = [landmarks[self.mp_pose.PoseLandmark.LEFT_ANKLE].x, landmarks[self.mp_pose.PoseLandmark.LEFT_ANKLE].y]
-                hip = [landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value].y]
-                horizontal = [hip[0] - 1, hip[1]]
-
-                if results.pose_landmarks:
-                    # Dessiner les connexions avec la couleur verte
-                    h, w, c = image.shape
-                    for connection in self.custom_pose_connections:
-                        start_landmark = connection[0]
-                        end_landmark = connection[1]
-                        start_point = (int(landmarks[start_landmark].x * w), int(landmarks[start_landmark].y * h))
-                        end_point = (int(landmarks[end_landmark].x * w), int(landmarks[end_landmark].y * h))
-                        cv2.line(image, start_point, end_point, (0, 255, 0), 3) 
-
-                hip_pixel = (int(hip[0] * w), int(hip[1] * h))
-                line_length = 80
-                horizontal_start = (hip_pixel[0] - line_length, hip_pixel[1])
-                horizontal_end = hip_pixel
-                cv2.line(image, horizontal_start, horizontal_end, (255, 0, 0), 1)
-
-
-                # Convertir les points des landmarks en coordonnées de pixels
-                shoulder = (int(shoulder[0] * w), int(shoulder[1] * h))
-                elbow = (int(elbow[0] * w), int(elbow[1] * h))
-                wrist = (int(wrist[0] * w), int(wrist[1] * h))
-                knee = (int(knee[0] * w), int(knee[1] * h))
-                ankle = (int(ankle[0] * w), int(ankle[1] * h))
-                hip = (int(hip[0] * w), int(hip[1] * h))
-                horizontal = (int(horizontal[0] * w), int(horizontal[1] * h))
-
-                # Calculate angles
-                angle_acromion_coude_poignet = Angles.calculate_angle(shoulder, elbow, wrist)
-                angle_hanche_genou_cheville = Angles.calculate_angle(hip, knee, ankle)
-                angle_bassin_acromion_poignet = Angles.calculate_angle(hip, shoulder, wrist)
-                angle_acromion_bassin_cheville = Angles.calculate_angle(shoulder, hip, ankle)
-                angle_dos = Angles.calculate_angle(horizontal, hip, shoulder)
-
-                # Dessinez les ellipses pour chaque angle calculé
-                self.draw_arc(image, elbow, wrist, shoulder, angle_acromion_coude_poignet, color=(0, 0, 80), transparency=0.5)
-                self.draw_arc(image, knee, hip, ankle, angle_hanche_genou_cheville, color=(0, 0, 80), transparency=0.5)
-                self.draw_arc(image, shoulder, hip, wrist, angle_bassin_acromion_poignet, color=(0, 0, 80), transparency=0.5)
-                self.draw_arc(image, hip, ankle, shoulder, angle_acromion_bassin_cheville, color=(0, 0, 80), transparency=0.5)
-
-                # Convertir l'image CV2 en un objet image PIL pour l'affichage dans Streamlit
-                pil_image = Image.fromarray(image)
-                
-
-            # Display angles with their corresponding colors in a more aesthetic manner
-                angle_data = {
-                    "bras": round(angle_acromion_coude_poignet, 2),
-                    "jambe": round(angle_hanche_genou_cheville, 2),
-                    "Bras/buste": round(angle_bassin_acromion_poignet, 2),
-                    "tronc": round(angle_acromion_bassin_cheville, 2),
-                    "dos": round(angle_dos, 2)  # Back angle is not associated with a color for drawing
-                }
-                
-                return pil_image, angle_data
-            except:
-                print("[ERROR] Unable to process the image.")
-                pass
-
-    def run_on_video(self, video_path:str):
-        angle_values = []
-
+    def process_video_file(self, video_path:str) -> tuple[str, list, int]:
+        """
+            Calculate and draw angle in Video
+            Args:
+                video_path (str): The path to the video.
+            Returns:
+                tuple: 
+                    temp_file_out.name (str): The video filepath with angles drawn
+                    angles_values (list): Angles data with frame code
+                    fps_input (int): FPS of the input video
+        """
         vid = cv2.VideoCapture(video_path)
         temp_file = tempfile.NamedTemporaryFile(delete=True, suffix=".mp4")
         temp_file_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
@@ -293,72 +280,28 @@ class Drawing:
         out = cv2.VideoWriter(temp_file.name, codec, fps_input, (width, height))
 
         i = 0
+        angles_values = []
         while True:
-            ret, img = vid.read()
-            if not ret:
-                break
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            results = self.pose.process(img)
-            h, w, c = img.shape
+            try:
+                ret, frame = vid.read()
+                if not ret:
+                    break
 
-            img.flags.writeable = True
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            if results.pose_landmarks:
-                landmarks = results.pose_landmarks.landmark
-                for connection in self.custom_pose_connections:
-                    start_landmark = connection[0]
-                    end_landmark = connection[1]
-                    start_point = (int(landmarks[start_landmark].x * w), int(landmarks[start_landmark].y * h))
-                    end_point = (int(landmarks[end_landmark].x * w), int(landmarks[end_landmark].y * h))
-                    cv2.line(img, start_point, end_point, (0, 255, 0), 3) 
+                frame, angles_value = self.compute_and_drawing_processing(frame, i)
 
-                shoulder = [landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER].x, landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER].y]
-                elbow = [landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW].x, landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW].y]
-                wrist = [landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST].x, landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST].y]
-                knee = [landmarks[self.mp_pose.PoseLandmark.LEFT_KNEE].x, landmarks[self.mp_pose.PoseLandmark.LEFT_KNEE].y]
-                ankle = [landmarks[self.mp_pose.PoseLandmark.LEFT_ANKLE].x, landmarks[self.mp_pose.PoseLandmark.LEFT_ANKLE].y]
-                hip = [landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value].y]
-
-                horizontal = [0, hip[1]]  # Ceci crée une ligne horizontale au niveau de la hanche
-
-                # Calculer les angles
-                angle_acromion_coude_poignet = Angles.calculate_angle(shoulder, elbow, wrist)
-                angle_hanche_genou_cheville = Angles.calculate_angle(hip, knee, ankle)
-                angle_bassin_acromion_poignet = Angles.calculate_angle(hip, shoulder, wrist)
-                angle_acromion_bassin_cheville = Angles.calculate_angle(shoulder, hip, ankle)
-                angle_dos = Angles.calculate_angle(hip, horizontal, shoulder)
-                shoulder = (int(shoulder[0] * w), int(shoulder[1] * h))
-                elbow = (int(elbow[0] * w), int(elbow[1] * h))
-                wrist = (int(wrist[0] * w), int(wrist[1] * h))
-                knee = (int(knee[0] * w), int(knee[1] * h))
-                ankle = (int(ankle[0] * w), int(ankle[1] * h))
-                hip = (int(hip[0] * w), int(hip[1] * h))
-                horizontal = (int(horizontal[0] * w), int(horizontal[1] * h))
-
-                # Dessinez les ellipses pour chaque angle calculé
-                self.draw_arc(img, elbow, wrist, shoulder, angle_acromion_coude_poignet, color=(255, 0, 0, 128), transparency=0.5)
-                self.draw_arc(img, knee, hip, ankle, angle_hanche_genou_cheville, color=(0, 255, 0), transparency=0.5)
-                self.draw_arc(img, shoulder, hip, wrist, angle_bassin_acromion_poignet, color=(0, 0, 255), transparency=0.5)
-                self.draw_arc(img, hip, ankle, shoulder, angle_acromion_bassin_cheville, color=(255, 255, 0), transparency=0.5)
-
-                angle_values.append({
-                    "i": i,
-                    "bras": int(angle_acromion_coude_poignet),
-                    "jambe": int(angle_hanche_genou_cheville),
-                    "Bras/buste": int(angle_bassin_acromion_poignet),
-                    "tronc": int(angle_acromion_bassin_cheville),
-                    "dos": int(angle_dos)
-                })
+                angles_values.append(angles_value)
                 i+= 1
-                out.write(img)
+                out.write(frame)
+            except Exception as e:
+                print("[ERROR] Unable to process the video: ", e)
 
+        # Fermeture des flux video
         vid.release()
         out.release()
 
+        # Convertion de la suite de frame (out) en format exploitable par les navigateurs web
         subprocess.call(args=f"ffmpeg -y -i {temp_file.name} -c:v libx264 {temp_file_out.name}".split(" "))            
             
-        return temp_file_out.name, angle_values, fps_input
-    
-
+        return temp_file_out.name, angles_values, fps_input
     
     
