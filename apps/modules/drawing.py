@@ -230,8 +230,6 @@ class Drawing:
                 camera.release()
                 break
                 #raise RuntimeError("Failed to read camera frame")
-
-            frame = cv2.flip(frame, 1)
             
             frame, angles_value = self.compute_and_drawing_processing(frame=frame)
 
